@@ -72,6 +72,7 @@ handlers._users.get=(data,callback)=>{
 	if(phone){
 		_data.read('users',phone,(err,data)=>{
 				if(!err&&data){
+					delete data.hashedPassword
 					callback(200,data)
 				}else{
 					callback(400,{'Error':'User not found'})
@@ -83,9 +84,61 @@ handlers._users.get=(data,callback)=>{
 	}
 }
 handlers._users.put=(data,callback)=>{
+	var phone=typeof(data.payload.phone)=='string'&&data.payload.phone.trim().length==10?data.payload.phone.trim():false
+	var firstName=typeof(data.payload.firstName)=='string'&&data.payload.firstName.trim().length>0?data.payload.firstName.trim():false
+	var lastName=typeof(data.payload.lastName)=='string'&&data.payload.lastName.trim().length>0?data.payload.lastName.trim():false
+	var password=typeof(data.payload.password)=='string'&&data.payload.password.trim().length>0?data.payload.password.trim():false
 
+	if(phone){
+		if(firstName || lastName || password){
+			_data.read('users',phone,(err,data)=>{
+					if(!err&&data){
+						if(firstName){
+							data.firstName=firstName
+						}
+						if(lastName){
+							data.lastName=lastName
+						}
+						if(password){
+							data.hashedPassword=helpers.hash(password)
+						}
+						_data.update('users',phone,data,(err)=>{
+							if(err){
+								callback(500,{'Error':'Error updating the user'})
+							}else{
+								callback(200,{})
+							}
+						})
+					}else{
+						callback(400,{'Error':'User not found'})
+					}
+			})
+		}else{
+			callback(400,{'Error':'Missing required fields'})
+		}
+	}else{
+		callback(400,{'Error':'Missing required fields'})
+	}
 }
 handlers._users.delete=(data,callback)=>{
+	var phone=typeof(data.payload.phone)=='string'&&data.payload.phone.trim().length==10?data.payload.phone.trim():false
+	if(phone){
+		_data.read('users',phone,(err,data)=>{
+				if(!err&&data){
+					_data.delete('users',phone,(err)=>{
+						if(err){
+							callback(500,{'Error':'Error deleting the user'})
+						}else{
+							callback(200)
+						}
+					})
+				}else{
+					callback(400,{'Error':'User not found'})
+				}
+		})
+	}else{
+		callback(400,{'Error':'Missing required fields'})
+	}
 
 }
 module.exports=handlers
