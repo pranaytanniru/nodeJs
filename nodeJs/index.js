@@ -2,9 +2,11 @@ const http=require('http')
 const https=require('https')
 const url=require('url')
 const StringDecoder = require('string_decoder').StringDecoder;
-const config=require('./config')
+const config=require('./lib/config')
 const fs=require('fs')
 const _data=require('./lib/data')
+const handlers=require('./lib/handlers')
+const helpers=require('./lib/helpers')
 
 // @TODO creating file
 // _data.create('test','newOne',{'hehehe':'hehe'},(err)=>{
@@ -32,13 +34,15 @@ var httpsObject={
 }
 var httpServer=http.createServer(unified)
 var httpsServer=https.createServer(httpsObject,unified)
+
+
 function unified(request,response){
-	var parsedUrl=url.parse(request.url)
+	var parsedUrl=url.parse(request.url,true)
 	var path=parsedUrl.pathname
 	var trimmedPath=path.replace(/^\/+|\/+$/g,'')
 	var queryString=parsedUrl.query
 
-	var method=request.method
+	var method=request.method.toLowerCase()
 	var headers=request.headers
 	var decoder=new StringDecoder('utf-8')
 	var buffer=''
@@ -56,9 +60,10 @@ function unified(request,response){
 			'queryString':parsedUrl.query,
 			'method':method,
 			'headers':headers,
-			'payload':buffer,
+			'payload':helpers.parseJsonToObject(buffer),
 		}
-		console.log('data is',JSON.stringify(data));
+		// console.log('data is',JSON.stringify(data));
+		// console.log('choosen handler is',choosenHandler);
 		choosenHandler(data,(status=200,payload={})=>{
 			var payloadString=JSON.stringify(payload)
 			response.setHeader('Content-Type','application/json')
@@ -82,20 +87,11 @@ httpsServer.listen(config.httpsPort,()=>{
 	console.log('the server is running on localhost:',config.httpsPort,'mode',config.envName);
 });
 
-
-var handlers={}
-handlers.sample=function(data,callback){
-	callback(200,data)
-}
-handlers.ping=function(data,callback){
-	callback(200)
-}
-handlers.pageNotFound=function(data,callback){
-	callback(404,"pageNotFound")
-}
 var router={
 	'sample':handlers.sample,
-	'ping':handlers.ping
+	'ping':handlers.ping,
+	'users':handlers.users,
+
 }
 
 

@@ -1,6 +1,6 @@
 const fs=require('fs')
 const path=require('path')
-
+const helpers=require('./helpers')
 
 var lib={}
 lib.baseDir=path.join(__dirname,'/../.data/')
@@ -24,7 +24,8 @@ lib.create=function(dir,file,data,callback){
         }
       })
     }else{
-      callback("could not create a file , it may already exists ")
+      // console.log('got the data at lib.create',dir,file,data);
+      callback("could not create a file , it may already exists")
     }
   })
 };
@@ -32,7 +33,12 @@ lib.create=function(dir,file,data,callback){
 //read data file
 lib.read=(dir,file,callback)=>{
   fs.readFile(lib.baseDir+dir+"/"+file+".json",'utf-8',(err,data)=>{
-    callback(err,data)
+    if (err) {
+      callback(err,data)
+    }else {
+      var parsedData=helpers.parseJsonToObject(data)
+      callback(false,parsedData)
+    }
   })
 }
 
