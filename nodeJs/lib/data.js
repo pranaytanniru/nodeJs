@@ -1,3 +1,10 @@
+/*
+*
+*for handling data(stored in file storage)
+*
+*/
+
+
 const fs=require('fs')
 const path=require('path')
 const helpers=require('./helpers')
