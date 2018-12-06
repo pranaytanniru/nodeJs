@@ -139,6 +139,5 @@ handlers._users.delete=(data,callback)=>{
 	}else{
 		callback(400,{'Error':'Missing required fields'})
 	}
-
 }
 module.exports=handlers
