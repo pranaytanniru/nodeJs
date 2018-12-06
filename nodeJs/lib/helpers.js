@@ -20,4 +20,16 @@ helpers.parseJsonToObject=(text)=>{
   }
 }
 
+helpers.createRandomString=(length)=>{
+  if(length<0){
+    return false;
+  }
+  var randomString='';
+  var charactersItCanContain='0123456789abcdefghijklmnopqrstuvwxyz';
+  for(var i=0;i<length;i++){
+    var randomCharacter=charactersItCanContain.charAt(Math.floor(Math.random()*charactersItCanContain.length));
+    randomString+=randomCharacter;
+  }
+  return randomString;
+}
 module.exports = helpers;
