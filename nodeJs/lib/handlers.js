@@ -66,17 +66,23 @@ handlers._users.post=(data,callback)=>{
 
 }
 
-// @TODO: ONLY AUTHENTICATED USERS CAN ACCESS THEIR DATA
 handlers._users.get=(data,callback)=>{
 	var phone=typeof(data.queryString.phone)=='string'&&data.queryString.phone.trim().length==10?data.queryString.phone.trim():false
 	if(phone){
-		_data.read('users',phone,(err,userData)=>{
-				if(!err&&userData){
-					delete userData.hashedPassword
-					callback(200,userData)
-				}else{
-					callback(400,{'Error':'User not found'})
-				}
+		var token=typeof(data.headers.token)=='string'&&data.headers.token.trim().length==20?data.headers.token.trim():false
+		handlers._tokens.verifyToken(phone,token,(validToken)=>{
+			if(validToken){
+				_data.read('users',phone,(err,userData)=>{
+						if(!err&&userData){
+							delete userData.hashedPassword
+							callback(200,userData)
+						}else{
+							callback(400,{'Error':'User not found'})
+						}
+				})
+			}else{
+				callback(400,{'Error':'You are not authorised to access'})
+			}
 		})
 	}else{
 		// console.log('phone',data.payload,'data',data);
@@ -90,32 +96,39 @@ handlers._users.put=(data,callback)=>{
 	var password=typeof(data.payload.password)=='string'&&data.payload.password.trim().length>0?data.payload.password.trim():false
 
 	if(phone){
-		if(firstName || lastName || password){
-			_data.read('users',phone,(err,userData)=>{
-					if(!err&&data){
-						if(firstName){
-							userData.firstName=firstName
-						}
-						if(lastName){
-							userData.lastName=lastName
-						}
-						if(password){
-							userData.hashedPassword=helpers.hash(password)
-						}
-						_data.update('users',phone,userData,(err)=>{
-							if(err){
-								callback(500,{'Error':'Error updating the user'})
+		var token=typeof(data.headers.token)=='string'&&data.headers.token.trim().length==20?data.headers.token.trim():false
+		handlers._tokens.verifyToken(phone,token,(validToken)=>{
+			if(validToken){
+				if(firstName || lastName || password){
+					_data.read('users',phone,(err,userData)=>{
+							if(!err&&data){
+								if(firstName){
+									userData.firstName=firstName
+								}
+								if(lastName){
+									userData.lastName=lastName
+								}
+								if(password){
+									userData.hashedPassword=helpers.hash(password)
+								}
+								_data.update('users',phone,userData,(err)=>{
+									if(err){
+										callback(500,{'Error':'Error updating the user'})
+									}else{
+										callback(200,{})
+									}
+								})
 							}else{
-								callback(200,{})
+								callback(400,{'Error':'User not found'})
 							}
-						})
-					}else{
-						callback(400,{'Error':'User not found'})
-					}
-			})
-		}else{
-			callback(400,{'Error':'Missing required fields'})
-		}
+					})
+				}else{
+					callback(400,{'Error':'Missing required fields'})
+				}
+			}else{
+				callback(400,{'Error':'You are not authorised to access'})
+			}
+		})
 	}else{
 		callback(400,{'Error':'Missing required fields'})
 	}
@@ -123,18 +136,25 @@ handlers._users.put=(data,callback)=>{
 handlers._users.delete=(data,callback)=>{
 	var phone=typeof(data.payload.phone)=='string'&&data.payload.phone.trim().length==10?data.payload.phone.trim():false
 	if(phone){
-		_data.read('users',phone,(err,userData)=>{
-				if(!err&&userData){
-					_data.delete('users',phone,(err)=>{
-						if(err){
-							callback(500,{'Error':'Error deleting the user'})
+		var token=typeof(data.headers.token)=='string'&&data.headers.token.trim().length==20?data.headers.token.trim():false
+		handlers._tokens.verifyToken(phone,token,(validToken)=>{
+			if(validToken){
+				_data.read('users',phone,(err,userData)=>{
+						if(!err&&userData){
+							_data.delete('users',phone,(err)=>{
+								if(err){
+									callback(500,{'Error':'Error deleting the user'})
+								}else{
+									callback(200)
+								}
+							})
 						}else{
-							callback(200)
+							callback(400,{'Error':'User not found'})
 						}
-					})
-				}else{
-					callback(400,{'Error':'User not found'})
-				}
+				})
+			}else{
+				callback(400,{'Error':'You are not authorised to access'})
+			}
 		})
 	}else{
 		callback(400,{'Error':'Missing required fields'})
@@ -244,5 +264,18 @@ handlers._tokens.delete=(data,callback)=>{
 	}else{
 		callback(400,{'Error':'Missing required fields'})
 	}
+}
+handlers._tokens.verifyToken=(phone,id,callback)=>{
+	_data.read('tokens',id,(err,tokenData)=>{
+		if(err){
+			callback(false);
+		}else{
+			if(phone===tokenData.phone&&tokenData.expires>Date.now()){
+				callback(true);
+			}else{
+				callback(false);
+			}
+		}
+	})
 }
 module.exports=handlers
