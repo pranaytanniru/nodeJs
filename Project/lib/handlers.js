@@ -205,7 +205,6 @@ handlers._tokens.post=(data,callback)=>{
 	}
 }
 handlers._tokens.get=(data,callback)=>{
-	console.log('data.queryString.id',data.queryString.id);
 	var id=typeof(data.queryString.id)=='string'&&data.queryString.id.trim().length==20?data.queryString.id.trim():false
 	if(id){
 		_data.read('tokens',id,(err,tokenData)=>{
@@ -242,7 +241,7 @@ handlers._tokens.put=(data,callback)=>{
 				}
 		})
 	}else{
-		callback(400,{'Error':'Missing required fields'})
+		callback(400,{'Error':'Missing required fields or you need to give extend value true'})
 	}
 }
 handlers._tokens.delete=(data,callback)=>{
